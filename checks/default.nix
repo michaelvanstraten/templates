@@ -21,14 +21,15 @@ let
               nix
               cacert
             ];
+
             NIX_CONFIG = "experimental-features = nix-command flakes";
           }
           ''
             pwd
             whoami
+            HOME=$(mktemp -d);
             nix flake new -t "${self}" "${checkName}"
             cd "${checkName}"
-            echo "here"
             nix flake check --print-build-logs > $out 2>&1
           '';
     };
