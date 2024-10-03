@@ -23,4 +23,4 @@ jobs:
       #   uses: DeterminateSystems/magic-nix-cache-action@main
       #
       - name: Check Flake for all systems
-        run: nix flake check --all-systems
+        run: nix flake check --print-build-logs --all-systems
