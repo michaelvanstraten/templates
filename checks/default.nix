@@ -25,7 +25,7 @@ let
           ''
             set -x  # Enable verbose output
             # Use `--print-build-logs` for verbose output during CI runs
-            nix flake check --print-build-logs ${template.path} > $out 2>&1
+            nix flake check --print-build-logs ${template.path} -vvv > $out 2>&1
             set +x  # Disable verbose output
           '';
     };
