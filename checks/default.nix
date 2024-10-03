@@ -25,6 +25,7 @@ let
           }
           ''
             pwd
+            whoami
             nix flake new -t "${self}" "${checkName}"
             cd "${checkName}"
             nix flake check --print-build-logs > $out 2>&1
