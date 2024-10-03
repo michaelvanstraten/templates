@@ -21,10 +21,16 @@ let
               nix
               cacert
             ];
+
+            NIX_CONFIG = "experimental-features = nix-command flakes";
           }
           ''
-            # Use `--print-build-logs` for verbose output during CI runs
-            nix flake check --print-build-logs ${template.path} > $out 2>&1
+            pwd
+            whoami
+            HOME=$(mktemp -d);
+            nix flake new -t "${self}" "${checkName}"
+            cd "${checkName}"
+            nix flake check --print-build-logs > $out 2>&1
           '';
     };
 
