@@ -2,7 +2,7 @@
   description = "Nix Flake Templates";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixpkgs-unstable";
 
     flake-utils.url = "github:numtide/flake-utils";
 
@@ -10,6 +10,12 @@
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+  };
+
+  nixConfig = {
+    extra-experimental-features = [
+      "recursive-nix"
+    ];
   };
 
   outputs =
