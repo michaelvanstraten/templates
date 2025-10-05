@@ -1,0 +1,82 @@
+name: Test Templates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# If new code is pushed to a PR branch, then cancel in progress workflows for that PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  calculate-templates:
+    name: Calculate Template Matrix
+    runs-on: ubuntu-latest
+
+    outputs:
+      templates: ${{ steps.get-templates.outputs.templates }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Get available templates
+        id: get-templates
+        run: |
+          templates=$(
+            nix eval .#templates --apply '
+            templates:
+            builtins.attrValues (
+              builtins.mapAttrs (name: template: {
+                inherit name;
+                hasLockFile = builtins.pathExists (template.path + "/flake.lock");
+              }) templates
+            )
+            ' --json
+          )
+          echo "templates=$templates" >> "$GITHUB_OUTPUT"
+          echo "Found templates: $templates"
+
+  test-templates:
+    name: Test Template - ${{ matrix.template.name }}
+    runs-on: ubuntu-latest
+    needs: calculate-templates
+
+    strategy:
+      fail-fast: false
+      matrix:
+        template: ${{ fromJSON(needs.calculate-templates.outputs.templates) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Create temporary directory
+        run: |
+          temp_dir=$(mktemp -d)
+          echo "TEMP_DIR=$temp_dir" >> "$GITHUB_ENV"
+          echo "Created temp directory: $temp_dir"
+
+      - name: Instantiate template
+        run: |
+          nix flake new -t .#${{ matrix.template.name }} "$TEMP_DIR"
+          cd "$TEMP_DIR"
+
+      - name: Test template with locked flake.lock
+        if: ${{ matrix.template.hasLockFile }}
+        run: nix flake check --no-update-lock-file --show-trace
+
+      - name: Test template with updated flake.lock
+        run: nix flake update && nix flake check --show-trace
